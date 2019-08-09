@@ -27,6 +27,7 @@ class CalcController{
         setTimeout(()=>{
             clearInterval(interval);
         }, 10000);*/
+        this.setLastNumberToDisplay();
     }
     //Pegando o Ultimo elemento do array
     getLastOperation(){
@@ -35,48 +36,101 @@ class CalcController{
 
     isOperator(value){
         console.log("o valor ", value);
-       if(value !== '+' && value !== '-'&& value !== '*'&& value !== '/'&& value !== '%'){
-           return false;
-       }else{
+       if(value === '+' || value === '-'|| value === '*' || value === '/' || value === '%'){
            return true;
+       }else{
+           return false;
        }
         /* Tentei usar essa função mas não conseguir! Revisar sintaxe!       
            if(['+', '-', '*', '/', '%'].indexOf(value) > -1);
           */ 
     }
 
-    setValueOperation(value){
+    setLastOperation(value){
         this._operation[this._operation.length-1] = value;
+    }
+
+    pushOperation(value){
+        this._operation.push(value);
+        //Condição para verificar quando o quarto elemento do array foi inserido
+        if(this._operation.length > 3){
+            //função que irá realizar o cálculo dos elementos 3 primeiros elementos do array
+            this.calc();
+        }
+    }
+
+    calc(){
+
+        let last = '';
+
+        if(this._operation.length >3){
+        //Guardando e retirando o quarto elemento do array
+            last = this._operation.pop();
+        }
+        //Transformando o array em uma string para que possa ser calculado pelo eval
+        let result = eval(this._operation.join(""));
+
+        if(last == "%"){
+            result /= 100;
+
+            this._operation = [result];
+        }else{
+            //Estabelecendo uma nova configuração de array onde o resultado é o primeiro elemento e o last o segundo
+            this._operation = [result];
+            //se last for qualquer coisa 
+            if(last) this._operation.push(last);
+        }
+        
+        //atualizando o display com o resultado
+        this.setLastNumberToDisplay();
+    }
+
+    setLastNumberToDisplay(){
+        let lastNumber;
+        for(let i=this._operation.length-1; i>=0; i--){
+            if(!this.isOperator(this._operation[i])){
+                lastNumber = this._operation[i];
+                break;
+            }
+        }
+
+        if(!lastNumber) lastNumber = 0;      
+
+        this.displayCalc = lastNumber;
     }
 
     addOperation(value){
         
         console.log('Aqui', value, isNaN(this.getLastOperation()));
-        
+        //IsNaN verifica se não é um número
         if(isNaN(this.getLastOperation())){
             //STRING
             if(this.isOperator(value)){
                 //Trocar Operador
-                this.setValueOperation(value);
+                this.setLastOperation(value);
             }else if (isNaN(value)){
                 //Entrera aqui caso venha undefined por estar sendo iniciado pela primeira vez
-                console.log(value);
             }else{
                 //iniciando o vetor com o primeiro numero
-                this._operation.push(value);   
+                this.pushOperation(value);  
+                //atualizar display
+                this.setLastNumberToDisplay(); 
                 console.log("ainda n"); 
             }
         }else{
             if(this.isOperator(value)){
                 console.log("entrei aqui");
-                this._operation.push(value);
+                this.pushOperation(value);
             }else{
                 console.log('passei direto');
                 //NUMBER
                 //Transformando os valores em string para concatenar
                 var newValue = this.getLastOperation().toString() + value.toString();
                 //adicionando um elemendo ao array
-                this.setValueOperation(parseInt(newValue));
+                this.setLastOperation(parseInt(newValue));
+
+                //atualizar display
+                this.setLastNumberToDisplay();
             }
         }
         console.log('B',this._operation);
@@ -88,10 +142,12 @@ class CalcController{
 
     clearAll(){
         this._operation = [];
+        this.setLastNumberToDisplay();
     }
     //Eliminando o ultimo elemento do array
     clearEntry(){
         this._operation.pop();
+        this.setLastNumberToDisplay();
     }
 
     execBtn(value){
@@ -118,7 +174,7 @@ class CalcController{
                 this.addOperation('%');
                 break;
             case 'igual':
-               
+                this.calc();
                 break; 
             case 'ponto':
                 this.addOperation('.');
